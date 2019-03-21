@@ -1,0 +1,276 @@
+<!DOCTYPE html 16px;>
+<html>
+	<head>
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+			<meta charset="utf-8">
+				<title>Promoters Map</title>
+				<!-- Bootstrap -->
+				<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+				<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+				<link rel="stylesheet" href="styles.css">
+				<!-- Default Custom Styles -->
+				<link rel="stylesheet" href="../styles/common.css">
+				<style media="screen">
+					/* .navbar {
+						margin-bottom: 0;
+					} */
+				</style>
+	</head>
+	<body>
+		<!-- Modal -->
+		<div class="modal fade" id="myModal" role="dialog">
+			<div class="modal-dialog">
+				<!-- Modal content-->
+				<div class="modal-content">
+					<div class="modal-body" style="padding:40px 50px;">
+						<img id="modalImage" style="width: 100%;" src="" alt="">
+					</div>
+					<div class="modal-footer">
+						<button type="submit" class="btn btn-danger btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="navHeader">
+		</div>
+
+		<div class="checkinCheckoutButtons" style="background-color: #343a40;">
+			<button type="button" id="hideCheckins" class="btn btn-success">Hide Checkins</button>
+			<button type="button" id="hideCheckouts" class="btn btn-danger">Hide Checkouts</button>
+		</div>
+
+		<div class="loader"></div>
+		<div id="map" style="display: none;"></div>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAhpXh9HWJ9L_kh7gfyKvY3rCgbvMtnvmU"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+		<script src="https://www.gstatic.com/firebasejs/5.4.0/firebase.js"></script>
+		<script src="../js/utils.js" charset="utf-8"></script>
+		<script src="../js/config.js" charset="utf-8"></script>
+		<script type="text/javascript">
+
+			filterNavHeaderBasedOnFeatures('promoterMapsNavItem');
+
+			var checkinArrayObjects;
+			var checkoutArrayObjects;
+			const checkinCheckoutRequests = Promise.all([
+				new Promise((resolve, reject) => {
+					firebase.database().ref(`/${domain}/checkins/${campaignId}`).once('value')
+					.then(function(snapshot) {
+						checkinArrayObjects = snapshotToArray(snapshot);
+						console.log(checkinArrayObjects);
+						resolve();
+					})
+					.catch(function(error){
+						reject(error);
+					})
+				}),
+				new Promise((resolve, reject) => {
+					firebase.database().ref(`/${domain}/checkouts/${campaignId}`).once('value')
+					.then(function(snapshot) {
+						checkoutArrayObjects = snapshotToArray(snapshot);
+						console.log(checkoutArrayObjects);
+						resolve();
+					})
+					.catch(function(error){
+						reject(error);
+					})
+				})
+			]);
+
+			var lengthOfCheckoutArray = 0;
+			checkinCheckoutRequests.then(() => {
+				startExecution();
+				lengthOfCheckoutArray = checkoutArrayObjects.length;
+				console.log("done loading checkins and checkouts");
+			}, error => {
+				console.log("Error with Requests");
+			});
+
+			var storageRef = firebase.storage().ref();
+			function startExecution(){
+				for (let i = 0 ; i < checkinArrayObjects.length; i++){
+					storageRef.child(`${domain}/checkins/${campaignId}/${checkinArrayObjects[i]['image']}`).getDownloadURL().then(function(url) {
+						checkinArrayObjects[i]['imageDownloadUrl'] = url;
+						addToLocationArray(checkinArrayObjects[i], i);
+					}).catch(function(error) {
+						console.log(error);
+						addToLocationArray(checkinArrayObjects[i], i);
+					});
+				}
+			}
+
+
+			var greenPinColor = "00ff00";
+			var redPinColor = "ff0000";
+			var markerUrl = "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|";
+			var	ids			  = [];
+			var locations = [];
+			var promoterName     = [];
+			var timestamp   = [];
+			var image_sources = [];
+			function addToLocationArray(mapObject, i){
+				// for checkins
+				let latitude = mapObject['latlon']['coords']['latitude'];
+				let longitude = mapObject['latlon']['coords']['longitude'];
+				let latlonArray = [latitude, longitude];
+
+				ids[i] = i;
+				locations[i] = latlonArray;
+				promoterName[i] = mapObject['promoterName'];
+				timestamp[i] = new Date(mapObject['latlon']['timestamp']) + "";
+				image_sources[i] = mapObject['imageDownloadUrl'];
+
+				// For checkouts
+				let outLatitude = checkoutArrayObjects[i]['latlon']['coords']['latitude'];
+				let outLongitude = checkoutArrayObjects[i]['latlon']['coords']['longitude'];
+				let outLatLonArray = [outLatitude, outLongitude];
+
+				ids[lengthOfCheckoutArray + i] = lengthOfCheckoutArray + i;
+				locations[lengthOfCheckoutArray + i] = outLatLonArray;
+				promoterName[lengthOfCheckoutArray + i] = checkoutArrayObjects[i]['promoterName'];
+				timestamp[lengthOfCheckoutArray + i] = new Date(checkoutArrayObjects[i]['latlon']['timestamp']) + "";
+
+				if (locations.length === (checkinArrayObjects.length + checkoutArrayObjects.length)){
+					initializeMap();
+				}
+			}
+
+			var map;
+			function initializeMap(){
+				$(".loader").remove();
+				$("#map").show();
+
+				var bounds = new google.maps.LatLngBounds();
+
+				for (let i = 0; i < locations.length; i++)
+					bounds.extend(new google.maps.LatLng(locations[i][0], locations[i][1]));
+
+				map = new google.maps.Map(document.getElementById('map'), {
+					mapTypeId: 'hybrid',
+					disableDefaultUI: true,
+					mapTypeControl: true,
+					gestureHandling: 'greedy',
+					mapTypeControlOptions: {
+						  style: google.maps.MapTypeControlStyle.DEFAULT,
+						  position: google.maps.ControlPosition.LEFT_BOTTOM
+					  },
+					  center: bounds.getCenter()
+				});
+
+				map.fitBounds(bounds);
+				var marker;
+				var infowindow 	 = new google.maps.InfoWindow();
+
+				var markersArray  = [];
+
+				for (let i = 0; i < locations.length; i++) {
+
+					let icon = {
+						url: markerUrl + greenPinColor,
+						scaledSize: new google.maps.Size(25, 45)
+					};
+					if (i >= checkinArrayObjects.length)
+						icon = {
+							url: markerUrl + redPinColor,
+							scaledSize: new google.maps.Size(25, 40)
+						}
+
+					marker = new google.maps.Marker({
+						position: new google.maps.LatLng(locations[i][0], locations[i][1]),
+						map: map,
+						icon: icon,
+						animation: google.maps.Animation.DROP
+					});
+
+					markersArray.push(marker);
+
+					google.maps.event.addListener(marker, 'click', (function(marker, index) {
+						return function() {
+							toggleBounce(marker);
+							infowindow.setContent(content(i));
+							infowindow.open(map, marker);
+						}
+					})(marker, i));
+				};
+
+				google.maps.event.addDomListener(document.getElementById('hideCheckins'), 'click', function (evt) {
+					toggleMarkers(markersArray, true);
+				});
+
+				google.maps.event.addDomListener(document.getElementById('hideCheckouts'), 'click', function (evt) {
+					toggleMarkers(markersArray, false);
+				});
+			}
+
+			function content(i){
+				let mainContent = '<p>This is a Checkout</p>';
+				if (i < checkinArrayObjects.length)
+					mainContent = '<img id=' + ids[i] + ' class="pic img-responsive" src="' + image_sources[i]
+					+		'\"onclick="openImage('+ i +')"\" style="width: 200px; height: auto; margin-bottom: 5%; margin-top: 5%;'
+					+  		'alt="' + timestamp[i] + '" title="' + promoterName[i] + '" />';
+				var res = '<table height="auto" width="auto">'
+							+ '<tr><td align="center" colspan="2" ><b>' + promoterName[i] + '</b></td></tr>'
+							+ '<tr ><td align="center" colspan="2">'
+							+ 	mainContent
+							+ '</td></tr> '
+							+ '<tr><td align="left"><b>Time & Date:&nbsp;&nbsp;</b></td>'
+							+ 	'<td align="right">'
+							+ 	'<p id="imageTimestamp">' + timestamp[i].slice(0, 24)
+							+	'</p>'
+							+ '</td></tr>';
+
+				return res + '</table>';
+			}
+
+			function toggleMarkers(array, isCheckins){
+				let startRange = 0;
+				let endRange = 0;
+				if (isCheckins){
+					startRange = 0;
+					endRange = checkinArrayObjects.length;
+				} else {
+					startRange = checkinArrayObjects.length;
+					endRange = checkinArrayObjects.length + checkoutArrayObjects.length;
+				}
+
+				if ( array.length > 0 && array[startRange].getMap() != null){
+					if (isCheckins)
+						$("#hideCheckins").text("Unhide Checkins");
+					else
+						$("#hideCheckouts").text("Unhide Checkouts");
+					for (let i = startRange ; i < endRange; i++){
+						array[i].setMap(null);
+					}
+				} else if (array.length > 0){
+					if (isCheckins)
+						$("#hideCheckins").text("Hide Checkins");
+					else
+						$("#hideCheckouts").text("Hide Checkouts");
+					for (let i = startRange; i < endRange; i++){
+						array[i].setMap(map);
+					}
+				}
+			}
+
+			function toggleBounce (mymarker) {
+				if (mymarker.getAnimation() != null) mymarker.setAnimation(null);
+				else {
+					mymarker.setAnimation(google.maps.Animation.BOUNCE);
+					setTimeout(function(){toggleBounce(mymarker);}, 1500);
+				}
+			}
+
+			function openImage(id){
+				console.log(id);
+				$("#modalImage").attr("src", checkinArrayObjects[id]['imageDownloadUrl']);
+				$("#myModal").modal();
+			}
+
+
+
+		</script>
+	</body>
+</html>

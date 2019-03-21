@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Surveyism Promoter Logs</title>
+
+      <!-- external libs from cdnjs, jquery + pivotjs -->
+      <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+      <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+
+      <!-- Bootstrap -->
+      <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+      <!-- DataTables -->
+      <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jqc-1.12.4/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-flash-1.5.2/b-html5-1.5.2/b-print-1.5.2/r-2.2.2/datatables.min.css"/>
+
+      <!-- Google Fonts-->
+      <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+
+      <!-- Default Custom Styles -->
+      <link rel="stylesheet" href="../styles/common.css">
+      <style media="screen">
+        /* For aligning images in table */
+        .sorting_1 {
+          text-align: center;
+        }
+      </style>
+   </head>
+   <body>
+
+      <div id="wrapper">
+        <div id="navHeader">
+
+        </div>
+         <!-- /. NAV SIDE  -->
+         <div id="page-wrapper">
+            <div class="header">
+               <h1 class="page-header">
+                  <span id="campaignTitle">Charts</span> <small>- promoter logs by Select-Agency</small>
+               </h1>
+            </div>
+
+            <div class="loader"></div>
+            <div id="page-inner" style="display:none;">
+              <!-- Modal -->
+              <div class="modal fade" id="myModal" role="dialog">
+                <div class="modal-dialog">
+                  <!-- Modal content-->
+                  <div class="modal-content">
+                    <div class="modal-body" style="padding:40px 50px;">
+                      <img id="modalImage" style="width: 100%;" src="https://pivottable.js.org/images/animation.gif" alt="">
+                    </div>
+                    <div class="modal-footer">
+                      <button type="submit" class="btn btn-danger btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <p style="font-size: 1.5em;color: #d03f3f;font-weight: bold;">
+                You can reorder columns by dragging and dropping
+              </p>
+              <!-- ROW -->
+               <div class="row align-items-center">
+                  <div class="col-md-12 col-sm-12 col-xs-12">
+                    <div class="panel panel-default">
+                       <div class="panel-heading">
+                          Promoter Logs
+                       </div>
+                       <div class="panel-body">
+                         <div class="">
+                           <table id="surveysDataTable" class="display nowrap" style="width:100%">
+                             <thead id="dataTableHeader">
+                              </thead>
+                          </table>
+                         </div>
+                       </div>
+                    </div>
+                  </div>
+               </div>
+
+            </div>
+            <!-- /. PAGE INNER  -->
+         </div>
+         <!-- /. PAGE WRAPPER  -->
+      </div>
+      <!-- /. WRAPPER  -->
+      <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jqc-1.12.4/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-flash-1.5.2/b-html5-1.5.2/b-print-1.5.2/cr-1.5.0/r-2.2.2/sc-1.5.0/datatables.min.css"/>
+
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+      <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jqc-1.12.4/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-flash-1.5.2/b-html5-1.5.2/b-print-1.5.2/cr-1.5.0/r-2.2.2/sc-1.5.0/datatables.min.js"></script>
+      <script src="https://www.gstatic.com/firebasejs/5.4.0/firebase.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+      <script src="../js/utils.js" charset="utf-8"></script>
+      <script src="../js/config.js" charset="utf-8"></script>
+      <script>
+
+        firebase.database().ref(`/${domain}/campaigns/${campaignId}`).once('value').then(function(snapshot) {
+          campaign = snapshot.val();
+
+          // Set Campaign Title
+          $("#campaignTitle").text(campaign.title);
+          campaignTitle = campaign.title + " Promoter Logs";
+        });
+
+        filterNavHeaderBasedOnFeatures('promoterLogsNavItem');
+
+        var checkinArrayObjects;
+        var checkoutArrayObjects;
+        const checkinCheckoutRequests = Promise.all([
+          new Promise((resolve, reject) => {
+            firebase.database().ref(`/${domain}/checkins/${campaignId}`).once('value')
+            .then(function(snapshot) {
+              checkinArrayObjects = snapshotToArray(snapshot);
+              console.log(checkinArrayObjects);
+              resolve();
+            })
+            .catch(function(error){
+              reject(error);
+            })
+          }),
+          new Promise((resolve, reject) => {
+            firebase.database().ref(`/${domain}/checkouts/${campaignId}`).once('value')
+            .then(function(snapshot) {
+              checkoutArrayObjects = snapshotToArray(snapshot);
+              console.log(checkoutArrayObjects);
+              resolve();
+            })
+            .catch(function(error){
+              reject(error);
+            })
+          })
+        ]);
+
+        checkinCheckoutRequests.then(() => {
+          initializeDataTable();
+          console.log("done");
+        }, error => {
+          console.log("Error with Requests");
+        });
+
+        function createDataTable(){
+          let table = $('#surveysDataTable').DataTable( {
+              dom: 'Blfrtip',
+              data: finalCheckinArray,
+              columns: columns,
+              lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+              colReorder: true,
+              scrollY:        '60vh',
+              scrollX: true,
+              deferRender:    true,
+              scroller:       true,
+              buttons: [
+                  'copy',
+                  'csv',
+                  {
+                    extend: 'excelHtml5',
+                    title: campaignTitle,
+                    exportOptions: {
+                        columns: [1, 2, 3, 4, 5, 6], // Only name, email and role
+                    }
+                  },
+                  'pdf',
+                  'print'
+              ]
+          });
+
+          $(".loader").remove();
+          $("#page-inner").show();
+          
+          table.draw();
+        }
+
+        function displayImage(imageUrl){
+          $("#modalImage").attr("src", imageUrl);
+          $("#myModal").modal();
+        }
+
+        var finalCheckinArray = [];
+        function combineCheckinAndCheckout(checkinRowObject){
+          console.log("combine called");
+          for (let i = 0; i < checkinArrayObjects.length; i++){
+            for (let j = 0; j < checkoutArrayObjects.length; j++){
+              if (checkinArrayObjects[i]['promoter'] === checkoutArrayObjects[j]['promoter']){
+                let checkin;
+                let checkout;
+                if (checkinArrayObjects[i].hasOwnProperty('latlon')){
+                  checkin = new Date(checkinArrayObjects[i]['latlon']['timestamp']) + "";
+                  checkout = new Date(checkoutArrayObjects[j]['latlon']['timestamp']) + "";
+                } else {
+                  checkin = new Date(checkinArrayObjects[i]['realTimestamp']) + "";
+                  checkout = new Date(checkoutArrayObjects[j]['realTimestamp']) + "";
+                }
+                
+                let checkinRow = {
+                  "Image Url": `<img width="50" heigth="50" style="cursor: pointer;" onclick="displayImage(\'${checkinArrayObjects[i]['imageDownloadUrl']}\')" src="${checkinArrayObjects[i]['imageDownloadUrl']}" />`,
+                  "Outlet": checkinArrayObjects[i]['location'],
+                  "Promoter Name": checkinArrayObjects[i]['promoterName'],
+                  "Check In": checkin.slice(0,24),
+                  "Check Out": checkout.slice(0,24)
+                }
+                // Remove element from checkout array
+                checkoutArrayObjects.splice(j, 1);
+
+                finalCheckinArray.push(checkinRow);
+
+                break;
+              }
+            }
+          }
+          createDataTable();
+        }
+
+        var campaignTitle = "Surveyism Promoter Logs Export";
+        var columns = [];
+        var storageRef = firebase.storage().ref();
+        function initializeDataTable(){
+          // Set Table Columns
+          columns = [
+            { "data": "Image Url" },
+            { "data": "Outlet" },
+            { "data": "Promoter Name" },
+            { "data": "Check In" },
+            { "data": "Check Out" }
+          ];
+
+          // Populate Table Header with the right column names
+          let tableHeaderRow = "<tr>";
+          for (let i = 0; i < columns.length; i++){
+            tableHeaderRow += `<th>${columns[i]['data']}</th>`;
+          }
+          tableHeaderRow += "</tr>";
+          $("#dataTableHeader").append(tableHeaderRow);
+
+          // Sort checkin array based on Timestamp
+          for (let i = 0; i < checkinArrayObjects.length - 1; i++){
+            for (let j = i + 1; j < checkinArrayObjects.length; j++){
+
+              let checkInAtI;
+              let checkInAtJ;
+              if (checkinArrayObjects[i].hasOwnProperty('latlon')){
+                checkInAtI = checkinArrayObjects[i]['latlon']['timestamp'];
+              } else {
+                checkInAtI = checkinArrayObjects[i]['realTimestamp'];
+              }
+
+              if (checkinArrayObjects[j].hasOwnProperty('latlon')){
+                checkInAtJ = checkinArrayObjects[j]['latlon']['timestamp'];
+              } else {
+                checkInAtJ = checkinArrayObjects[j]['realTimestamp'];
+              }
+
+              if (checkInAtI > checkInAtJ){
+                checkinArrayObjects[i] = checkinArrayObjects.splice(j, 1, checkinArrayObjects[i])[0];
+              }
+              
+            }
+          }
+
+          // Sort checkout array based on Timestamp
+          for (let i = 0; i < checkoutArrayObjects.length - 1; i++){
+            for (let j = i + 1; j < checkoutArrayObjects.length; j++){
+              let checkoutAtI;
+              let checkoutAtJ;
+              if (checkoutArrayObjects[i].hasOwnProperty('latlon')){
+                checkoutAtI = checkoutArrayObjects[i]['latlon']['timestamp'];
+              } else {
+                checkoutAtI = checkoutArrayObjects[i]['realTimestamp'];
+              }
+
+              if (checkoutArrayObjects[j].hasOwnProperty('latlon')){
+                checkoutAtJ = checkoutArrayObjects[j]['latlon']['timestamp'];
+              } else {
+                checkoutAtJ = checkoutArrayObjects[j]['realTimestamp'];
+              }
+
+              if (checkoutAtI > checkoutAtJ){
+                checkoutArrayObjects[i] = checkoutArrayObjects.splice(j, 1, checkoutArrayObjects[i])[0];
+              }
+              
+            }
+          }
+
+          downloadImages(0);
+        }
+
+        function downloadImages(i) {
+          if (i >= checkinArrayObjects.length){
+            combineCheckinAndCheckout();
+            return;
+          }
+          storageRef.child(`${domain}/checkins/${campaignId}/${checkinArrayObjects[i]['image']}`).getDownloadURL()
+            .then(function(url) {
+              checkinArrayObjects[i]['imageDownloadUrl'] = url;
+              console.log("downloaded images " + i)
+              downloadImages(i +1);
+            })
+            .catch(function (error) {
+              checkinArrayObjects[i]['imageDownloadUrl'] = 'https://vignette.wikia.nocookie.net/tranquiltirades/images/b/bd/Photo-Unavailable.jpg/revision/latest?cb=20150619194307';
+              downloadImages(i +1);
+              console.log(error);
+            })
+        }
+        </script>
+   </body>
+</html>

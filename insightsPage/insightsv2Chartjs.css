@@ -1,0 +1,16 @@
+.pvtAxisContainer, .pvtVals {
+    background: white !important;
+}
+
+.pvtAxisContainer li span.pvtAttr {
+    background: #0866c6c7;
+    color: white;
+}
+
+.pvtTriangle {
+    color: white;
+}
+
+table.pvtTable thead tr th, table.pvtTable tbody tr th {
+    background-color: #e8e8e8a1;
+}

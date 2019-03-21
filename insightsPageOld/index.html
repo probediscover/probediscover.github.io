@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Discover</title>
+
+      <!-- external libs from cdnjs, jquery + pivotjs -->
+      <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.css">
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js"></script>
+      <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+      <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+
+      <!-- PivotTable.js libs -->
+      <link rel="stylesheet" type="text/css" href="https://pivottable.js.org/dist/pivot.css">
+      <script type="text/javascript" src="https://pivottable.js.org/dist/pivot.js"></script>
+      <script src="https://pivottable.js.org/dist/export_renderers.js" charset="utf-8"></script>
+      <script src="https://cdn.jsdelivr.net/npm/subtotal@1.11.0-alpha.0/dist/subtotal.js" charset="utf-8"></script>
+      <script src="https://pivottable.js.org/dist/c3_renderers.js" charset="utf-8"></script>
+
+      <!-- Sheet Js Library -->
+      <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+
+      <!-- optional: mobile support with jqueryui-touch-punch -->
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+
+      <!-- Bootstrap -->
+      <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+      <!-- Google Fonts-->
+      <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+      <!-- Chart.js -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js" charset="utf-8"></script>
+
+      <!-- Default Custom Styles -->
+      <link rel="stylesheet" href="../styles/common.css">
+      <link rel="stylesheet" href="insightsv2Chartjs.css">
+   </head>
+   <body>
+
+      <div id="wrapper">
+        <div id="navHeader">
+
+        </div>
+
+         <!-- /. NAV SIDE  -->
+         <div id="page-wrapper">
+            <div class="header">
+               <h1 class="page-header">
+                  <span id="campaignTitle">Charts</span> <small>- insights by Select-Agency</small>
+               </h1>
+            </div>
+
+            <div class="loader"></div>
+            <div id="page-inner" style="display:none;">
+              <!-- Modal -->
+              <div class="modal fade" id="myModal" role="dialog">
+                <div class="modal-dialog">
+                  <!-- Modal content-->
+                  <div class="modal-content">
+                    <div class="modal-body" style="padding:40px 50px;">
+                      <img style="width: 100%;" src="https://pivottable.js.org/images/animation.gif" alt="">
+                    </div>
+                    <div class="modal-footer">
+                      <button type="submit" class="btn btn-danger btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row align-items-center">
+                 <div class="col-md-12 col-sm-12 col-xs-12">
+                   <div class="panel panel-default">
+                      <div class="panel-heading">
+                         Responsive Pivot Table
+                      </div>
+                      <div style="text-align: center;">
+                        <button type="button" class="btn btn-info btn-default" id="myBtn">Click For Instructions</button>
+                      </div>
+                      <div class="panel-body panel-body-pivot">
+                        <div class="pivotTableCenter" id="locationAgeGenderPivot"></div>
+                      </div>
+                   </div>
+                 </div>
+              </div>
+              <!-- ROW -->
+               <div class="row align-items-center">
+                  <div class="col-md-6 col-sm-12 col-xs-12">
+                    <div class="panel panel-default">
+                       <div class="panel-heading">
+                          Location Performance
+                       </div>
+                       <div class="panel-body">
+                         <div id="locationChartLegend" class="chart-legend">
+                           <!-- Generate Legends Here -->
+                         </div>
+                         <div class="chartAreaWrapper">
+                           <div class="chartAreaWrapper2" id="locationSampledSoldChartAreaWrapper2">
+                             <canvas id="locationSampledSoldChart" width="400" height="300"></canvas>
+                           </div>
+                         </div>
+                       </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6 col-sm-12 col-xs-12">
+                    <div class="panel panel-default">
+                       <div class="panel-heading">
+                          Conversion Rate By Location
+                       </div>
+                       <div class="panel-body">
+                         <div id="conversionChartLegend" class="chart-legend">
+                           <!-- Generate Legends Here -->
+                         </div>
+                         <div class="chartAreaWrapper">
+                           <div class="chartAreaWrapper2" id="conversionSampledSoldChartAreaWrapper2">
+                             <canvas id="conversionSampledSoldChart" width="400" height="300"></canvas>
+                           </div>
+                         </div>
+                       </div>
+                    </div>
+                  </div>
+               </div>
+               <!-- /. ROW  -->
+               <div class="row">
+                  <div class="col-md-6 col-sm-12 col-xs-12">
+                    <!-- For Placing Select Locations -->
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                         <label for="exampleFormControlSelect1">Filter By Location</label>
+                         <select class="form-control locationSelectOptions" id="locationSelectOptions">
+                           <option>All</option>
+                         </select>
+                       </div>
+                      </div>
+                    </div>
+                    <!-- //////////////////////////////////// -->
+                    <div class="panel panel-default">
+                       <div class="panel-heading">
+                          Daily Performance By Location
+                       </div>
+                       <div class="panel-body">
+                         <div id="dateChartLegend" class="chart-legend">
+                           <!-- Generate Legends Here -->
+                         </div>
+                         <div class="chartAreaWrapper">
+                           <div class="chartAreaWrapper2" id="dateSampledSoldChartAreaWrapper2">
+                             <canvas id="dateSampledSoldChart" width="400" height="300"></canvas>
+                           </div>
+                         </div>
+                       </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6 col-sm-12 col-xs-12">
+                    <!-- For Placing Select Locations -->
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="exampleFormControlSelect1">Filter By Location</label>
+                          <select class="form-control locationSelectOptions" id="locationSelectOptionsForHourlyPerformance">
+                            <option>All</option>
+                          </select>
+                       </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="exampleFormControlSelect1">Filter By Date</label>
+                          <select class="form-control dateSelectOptions" id="dateSelectOptionsForHourlyPerformance">
+                            <option>All</option>
+                          </select>
+                       </div>
+                      </div>
+                    </div>
+                    <!-- //////////////////////////////////// -->
+                    <div class="panel panel-default">
+                       <div class="panel-heading">
+                          Hourly Performance By Location
+                       </div>
+                       <div class="panel-body">
+                         <div id="hourChartLegend" class="chart-legend">
+                           <!-- Generate Legends Here -->
+                         </div>
+                         <div class="chartAreaWrapper">
+                           <div class="chartAreaWrapper2" id="hourSampledSoldChartAreaWrapper2">
+                             <canvas id="hourSampledSoldChart" width="400" height="300"></canvas>
+                           </div>
+                         </div>
+                       </div>
+                    </div>
+                  </div>
+               </div>
+               <!-- /. ROW  -->
+               <div class="row" id="rowContainsGenderData" style="display: none;">
+                  <div class="col-md-6 col-sm-12 col-xs-12">
+                    <!-- For Placing Select Locations -->
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="exampleFormControlSelect1">Filter By Location</label>
+                          <select class="form-control locationSelectOptions" id="genderSampledSoldSelectPerformance">
+                            <option>All</option>
+                          </select>
+                       </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label for="exampleFormControlSelect1">Filter By Date</label>
+                          <select class="form-control dateSelectOptions" id="genderSampledSoldDateSelectPerformance">
+                            <option>All</option>
+                          </select>
+                       </div>
+                      </div>
+                    </div>
+                    <!-- //////////////////////////////////// -->
+                     <div class="panel panel-default">
+                        <div class="panel-heading">
+                           Sampled/Sold Performance
+                        </div>
+                        <div class="panel-body">
+                          <div id="genderSampledSoldChartLegend" class="chart-legend">
+                            <!-- Generate Legends Here -->
+                          </div>
+                          <div class="chartAreaWrapper">
+                            <div class="chartAreaWrapper2" id="genderSampledSoldChartAreaWrapper2">
+                              <canvas id="genderSampledSoldChart" width="400" height="300"></canvas>
+                            </div>
+                          </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-md-6 col-sm-12 col-xs-12">
+                  </div>
+               </div>
+
+            </div>
+            <!-- /. PAGE INNER  -->
+         </div>
+         <!-- /. PAGE WRAPPER  -->
+      </div>
+      <!-- /. WRAPPER  -->
+      <script src="https://www.gstatic.com/firebasejs/5.4.0/firebase.js"></script>
+      <script src="../js/utils.js" charset="utf-8"></script>
+      <script src="../js/config.js" charset="utf-8"></script>
+      <script>
+
+        filterNavHeaderBasedOnFeatures('insightsNavItem');
+
+        var campaign = {};
+        var surveys = []
+
+        const surveyCampaignRequests = Promise.all([
+          new Promise((resolve, reject) => {
+            firebase.database().ref(`/${domain}/campaigns/${campaignId}`).once('value')
+            .then(function(snapshot) {
+              campaign = snapshot.val();
+              resolve();
+            })
+            .catch(function(error){
+              reject(error);
+            })
+          }),
+          new Promise((resolve, reject) => {
+            firebase.database().ref(`/${domain}/surveys/${campaignId}`).once('value')
+            .then(function(snapshot) {
+              surveys = snapshotToArray(snapshot);
+              console.log(surveys[0]);
+              resolve();
+            })
+            .catch(function(error){
+              reject(error);
+            })
+          })
+        ]);
+
+        surveyCampaignRequests.then(() => {
+          $("#campaignTitle").text(campaign.title);
+
+          $(".loader").remove();
+          $("#page-inner").show();
+
+          $("#myBtn").click(function(){
+              $("#myModal").modal();
+          });
+          
+          initializePivotTable();
+          let pivotTableValues = ["bought"];
+          createPivotTable("locationAgeGenderPivot", ["location"], ["gender", "age"], pivotTableValues);
+          // createPivotTable("genderSampledSoldPivot", ["gender"], ["bought"], []);
+
+          locationSampleSoldChart();
+          loadDayDateForLocation('All');
+          loadHourDateForLocation('All', 'All');
+
+          if (dataHasGender()){
+            $("#rowContainsGenderData").show();
+            loadGenderSoldSampledPerformanceForLocation('All', 'All');
+          }
+          loadConversionForAllLocations();
+
+          // Populate Select Option for Location Options
+          for (let i = 0; i < locationLabels.length; i++){
+            $(".locationSelectOptions").append('<option>' + locationLabels[i] + '</option>')
+          }
+          // Populate Select Option for Date Options
+          for (let i = 0; i < dateLabels.length; i++){
+            $(".dateSelectOptions").append('<option>' + dateLabels[i] + '</option>')
+          }
+
+          console.log("done");
+        }, error => {
+          console.log("Error with Requests");
+        });
+
+      </script>
+      <script src="insightsv2Pivotjs.js" charset="utf-8"></script>
+      <script src="insightsv2Chartjs.js" charset="utf-8"></script>
+      <script src="excelGenerator.js"></script>
+   </body>
+</html>
